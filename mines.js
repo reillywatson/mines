@@ -1,7 +1,15 @@
 var CLEAR = 0;
 var MINE = 0x1;
 var FLAG = 0x10;
-var makeBoard = function(width, height, mines) {
+var REVEALED = 0x100;
+
+var CELL_WIDTH = 20;
+var CELL_HEIGHT = 20;
+
+var canvas = null;
+var board = null;
+
+var makeBoard = function(width, height, mines, startCell) {
 	if (mines >= width * height) {
 		mines = width * height - 1;
 	}
@@ -17,7 +25,7 @@ var makeBoard = function(width, height, mines) {
 	while (minesPlaced < mines) {
 		var y = Math.floor(Math.random() * height);
 		var x = Math.floor(Math.random() * width);
-		if (board[y][x] == CLEAR) {
+		if (board[y][x] == CLEAR && !(y == startCell.row && x == startCell.col)) {
 			board[y][x] = MINE;
 			minesPlaced++;
 		}
@@ -25,51 +33,117 @@ var makeBoard = function(width, height, mines) {
 	return board;
 };
 
-var adjacentMines = function(board, row, col) {
-	mineCount = 0;
+var callAdjacent = function(row, col, fn) {
 	for (var i = -1; i <= 1; i++) {
 		for (var j = -1; j <= 1; j++) {
 			if (i != 0 || j != 0) {
 				if (row + i >= 0 && row + i < board.length) {
 					if (col + j >= 0 && col + j < board[row+i].length) {
-						if (board[row+i][col+j] & MINE) {
-							mineCount++;
-						}
+						fn(row+i, col+j);
 					}
 				}
 			}
 		}
 	}
+}
+
+var adjacentMines = function(row, col) {
+	var mineCount = 0;
+	callAdjacent(row, col, function(r,c) {
+		if (board[r][c] & MINE) {
+			mineCount++;
+		}
+	});
 	return mineCount;
 }
 
+var localCoords = function(e, element) {
+	return { x: e.pageX - element.offsetLeft, y: e.pageY - element.offsetTop };
+};
+
+var cellForClick = function(e) {
+	var coords = localCoords(e, canvas);
+	return { row: Math.floor(coords.y / CELL_HEIGHT), col: Math.floor(coords.x / CELL_WIDTH) };
+};
+
+var revealAdjacentZeroes = function(row, col) {
+	callAdjacent(row, col, function(r,c) {
+		if ((board[r][c] & REVEALED) == 0) {
+			board[r][c] = board[r][c] | REVEALED;
+			if (adjacentMines(r, c) === 0) {
+				revealAdjacentZeroes(r, c);
+			}
+		}
+	});
+};
+
+var leftClick = function(e) {
+	var cell = cellForClick(e);
+	if (board == null) {
+		board = makeBoard(10,10,10, cell);
+	}
+	if (board[cell.row][cell.col] & MINE) {
+		alert('You lose!');
+	}
+	else {
+		board[cell.row][cell.col] = board[cell.row][cell.col] | REVEALED;
+		if (adjacentMines(cell.row, cell.col) == 0) {
+			revealAdjacentZeroes(cell.row, cell.col);
+		}
+	}
+	updateBoard();
+	return false;
+};
+
+var rightClick = function(e) {
+	if (board == null) {
+		return false;
+	}
+	var cell = cellForClick(e);
+	if (board[cell.row][cell.col] & REVEALED) {
+		return false;
+	}
+	board[cell.row][cell.col] = board[cell.row][cell.col] | FLAG;
+	updateBoard();
+	return false;
+};
+
+var updateBoard = function() {
+	var ctx = canvas.getContext("2d");
+	drawBoard(ctx, board);
+};
+
 var drawBoard = function(ctx, board) {
-	var cellWidth = 20;
-	var cellHeight = 20;
-	console.log(board.length);
+	ctx.clearRect(0,0,canvas.width,canvas.height);
 	for (var row = 0; row < board.length; row++) {
 		for (var col = 0; col < board[row].length; col++) {
+			ctx.fillStyle="white";
 			var cell = board[row][col];
-			console.log(cell);
 			if (cell & FLAG) {
-				ctx.fillStyle="#FF0000";
+				ctx.fillStyle="red";
+				ctx.fillRect(col*CELL_WIDTH, row*CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
 			}
-			else if (cell & MINE) {
-				ctx.fillStyle="#00FF00";
+			else if (cell & REVEALED) {
+				if (cell & MINE) {
+					ctx.fillStyle = "black";
+					ctx.fillRect(col*CELL_WIDTH, row*CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
+				}
+				else {
+					var text = adjacentMines(row, col).toString();
+					ctx.textAlign = 'center';
+					var x = col * CELL_WIDTH + Math.floor(CELL_WIDTH / 2);
+					var y = row * CELL_HEIGHT + Math.floor(CELL_HEIGHT / 2);
+					console.log("num: " + x + "," + y);
+					ctx.fillStyle="black";
+					ctx.fillText(text, x, y);
+				}
 			}
-			else {
-				var text = adjacentMines(board, row, col).toString();
-				ctx.strokeText(text, col*cellWidth, row*cellHeight);
-				ctx.fillStyle="#ffffff";
-			}
-			ctx.fillRect(col*cellWidth, row*cellHeight, cellWidth, cellHeight);
 		}
 	}
 };
 
 var onLoad = function() {
-	board = makeBoard(10,10,10);
-	var c=document.getElementById("minesweeper");
-	var ctx=c.getContext("2d");
-	drawBoard(ctx, board, 10);
+	canvas = document.getElementById("minesweeper");
+	canvas.addEventListener('click', leftClick, false);
+	canvas.addEventListener('contextmenu', rightClick, false);
 };
