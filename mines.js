@@ -82,16 +82,14 @@ var leftClick = function(e) {
 	if (board == null) {
 		board = makeBoard(10,10,10, cell);
 	}
+	board[cell.row][cell.col] = board[cell.row][cell.col] | REVEALED;
+	if (adjacentMines(cell.row, cell.col) == 0 && (board[cell.row][cell.col] & MINE) == 0) {
+		revealAdjacentZeroes(cell.row, cell.col);
+	}
+	updateBoard();
 	if (board[cell.row][cell.col] & MINE) {
 		alert('You lose!');
 	}
-	else {
-		board[cell.row][cell.col] = board[cell.row][cell.col] | REVEALED;
-		if (adjacentMines(cell.row, cell.col) == 0) {
-			revealAdjacentZeroes(cell.row, cell.col);
-		}
-	}
-	updateBoard();
 	return false;
 };
 
@@ -133,11 +131,13 @@ var drawBoard = function(ctx, board) {
 					ctx.textAlign = 'center';
 					var x = col * CELL_WIDTH + Math.floor(CELL_WIDTH / 2);
 					var y = row * CELL_HEIGHT + Math.floor(CELL_HEIGHT / 2);
-					console.log("num: " + x + "," + y);
 					ctx.fillStyle="black";
 					ctx.fillText(text, x, y);
 				}
 			}
+			ctx.rect(col*CELL_WIDTH, row*CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
+			ctx.strokeStyle = "black";
+			ctx.stroke();
 		}
 	}
 };
