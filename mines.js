@@ -237,6 +237,27 @@ var drawBoard = function(ctx, board) {
 	ctx.stroke();
 };
 
+var difficultySelected = function() {
+	var select = document.getElementById("difficulty");
+	var difficulty = select.options[select.selectedIndex].value;
+	if (difficulty === "beginner") {
+		document.getElementById("rows").value = 8;
+		document.getElementById("cols").value = 8;
+		document.getElementById("mines").value = 10;
+	}
+	else if (difficulty === "intermediate") {
+		document.getElementById("rows").value = 16;
+		document.getElementById("cols").value = 16;
+		document.getElementById("mines").value = 40;
+	}
+	else if (difficulty === "expert") {
+		document.getElementById("rows").value = 24;
+		document.getElementById("cols").value = 24;
+		document.getElementById("mines").value = 99;
+	}
+	startNewGame();
+};
+
 var onLoad = function() {
 	var board = [];
 	var canvas = document.getElementById("minesweeper");

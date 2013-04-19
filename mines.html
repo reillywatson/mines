@@ -3,9 +3,14 @@
 	<script src="mines.js"></script>
 </head>
 <body onload="onLoad()">
-	<input id="cols" value="10">Width</input>
-	<input id="rows" value="10">Height</input>
+	<input id="cols" value="8">Width</input>
+	<input id="rows" value="8">Height</input>
 	<input id="mines" value="10">Mines</input>
+	<select id="difficulty" onchange="difficultySelected()">
+		<option value="beginner">Beginner</option>
+		<option value="intermediate">Intermediate</option>
+		<option value="expert">Expert</option>
+	</select>
 	<button id="newGame" onclick="startNewGame()">New</button>
 	<br/>
 	<canvas id="minesweeper" width="200" height="200" style="border:1px solid #000000;" oncontextmenu="return myRightClick(event);">
