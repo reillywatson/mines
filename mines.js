@@ -95,10 +95,12 @@ var rightClick = function(board, e) {
 		return false;
 	}
 	var cell = cellForClick(e, e.currentTarget);
-	if (board[cell.row][cell.col] & REVEALED) {
+	var val = board[cell.row][cell.col];
+	if (val & REVEALED) {
 		return false;
 	}
-	board[cell.row][cell.col] = board[cell.row][cell.col] ^ FLAG;
+	val = val ^ FLAG;
+	board[cell.row][cell.col] = val;
 	updateBoard(board);
 	return false;
 };
