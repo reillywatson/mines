@@ -50,15 +50,18 @@ var callAdjacent = function(board, row, col, fn) {
 	}
 }
 
-var adjacentMines = function(board, row, col) {
-	var mineCount = 0;
+var adjacentWithFlag = function(board, row, col, value) {
+	var count = 0;
 	callAdjacent(board, row, col, function(brd, r,c) {
-		if (brd[r][c] & MINE) {
-			mineCount++;
+		if (brd[r][c] & value) {
+			count++;
 		}
 	});
-	return mineCount;
+	return count;
 };
+
+var adjacentFlags = function(board, row, col) { return adjacentWithFlag(board, row, col, FLAG); }
+var adjacentMines = function(board, row, col) { return adjacentWithFlag(board, row, col, MINE); }
 
 var revealAdjacentZeroes = function(board, row, col) {
 	callAdjacent(board, row, col, function(brd,r,c) {
@@ -92,6 +95,17 @@ var hasWon = function(board) {
 	return true;
 };
 
+var hasLost = function(board) {
+	for (var row = 0; row < board.length; row++) {
+		for (var col = 0; col < board.length; col++) {
+			if ((board[row][col] & MINE) && (board[row][col] & REVEALED) && !(board[row][col] & FLAG)) {
+				return true;
+			}
+		}
+	}
+	return false;
+};
+
 var localCoords = function(e, element) {
 	return { x: e.pageX - element.offsetLeft, y: e.pageY - element.offsetTop };
 };
@@ -120,17 +134,34 @@ var hasMines = function(board) {
 	return false;
 };
 
+var revealCell = function(board, row, col) {
+	board[row][col] = board[row][col] | REVEALED;
+	if (adjacentMines(board, row, col) == 0 && !(board[row][col] & MINE)) {
+		revealAdjacentZeroes(board, row, col);
+	}
+};
+
+var maybeRevealAdjacentCells = function(board, cell) {
+	var mineCount = adjacentMines(board, cell.row, cell.col);
+	var flagCount = adjacentFlags(board, cell.row, cell.col);
+	if (mineCount == flagCount) {
+		callAdjacent(board, cell.row, cell.col, function(brd,r,c) {
+			revealCell(brd, r, c);
+		});
+	}
+};
+
 var leftClick = function(board, e) {
 	var cell = cellForClick(e, e.currentTarget);
 	if (!hasMines(board)) {
 		var mines = document.getElementById("mines").value;
 		board = placeMines(board, mines, cell);
 	}
-	board[cell.row][cell.col] = board[cell.row][cell.col] | REVEALED;
-	if (adjacentMines(board, cell.row, cell.col) == 0 && !(board[cell.row][cell.col] & MINE)) {
-		revealAdjacentZeroes(board, cell.row, cell.col);
+	if (board[cell.row][cell.col] & REVEALED) {
+		maybeRevealAdjacentCells(board, cell);
 	}
-	var lost = board[cell.row][cell.col] & MINE && !(board[cell.row][cell.col] & FLAG);
+	revealCell(board, cell.row, cell.col);
+	var lost = hasLost(board);
 	var won = hasWon(board);
 	if (won || lost) {
 		revealAllMines(board);
