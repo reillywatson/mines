@@ -6,10 +6,25 @@ var REVEALED = 0x100;
 var CELL_WIDTH = 20;
 var CELL_HEIGHT = 20;
 
-var makeBoard = function(width, height, mines, startCell) {
+var placeMines = function(board, mines, startCell) {
+	height = board.length;
+	width = board[0].length;
 	if (mines >= width * height) {
 		mines = width * height - 1;
 	}
+	var minesPlaced = 0;
+	while (minesPlaced < mines) {
+		var y = Math.floor(Math.random() * height);
+		var x = Math.floor(Math.random() * width);
+		if (board[y][x] === CLEAR && !(y === startCell.row && x === startCell.col)) {
+			board[y][x] = MINE;
+			minesPlaced = minesPlaced + 1;
+		}
+	}
+	return board;
+};
+
+var makeBoard = function(width, height) {
 	var board = new Array(height);
 	for (var y = 0; y < height; y++) {
 		var row = new Array(width);
@@ -17,15 +32,6 @@ var makeBoard = function(width, height, mines, startCell) {
 			row[x] = CLEAR;
 		}
 		board[y] = row;
-	}
-	var minesPlaced = 0;
-	while (minesPlaced < mines) {
-		var y = Math.floor(Math.random() * height);
-		var x = Math.floor(Math.random() * width);
-		if (board[y][x] == CLEAR && !(y == startCell.row && x == startCell.col)) {
-			board[y][x] = MINE;
-			minesPlaced++;
-		}
 	}
 	return board;
 };
@@ -73,7 +79,7 @@ var revealAllMines = function(board) {
 			}
 		}
 	}
-}
+};
 
 var hasWon = function(board) {
 	for (var row = 0; row < board.length; row++) {
@@ -84,7 +90,7 @@ var hasWon = function(board) {
 		}
 	}
 	return true;
-}
+};
 
 var localCoords = function(e, element) {
 	return { x: e.pageX - element.offsetLeft, y: e.pageY - element.offsetTop };
@@ -95,10 +101,30 @@ var cellForClick = function(e, element) {
 	return { row: Math.floor(coords.y / CELL_HEIGHT), col: Math.floor(coords.x / CELL_WIDTH) };
 };
 
+var newGame = function() {
+	var rows = document.getElementById("rows").value;
+	var cols = document.getElementById("cols").value;
+	document.getElementById("minesweeper").height = rows * CELL_HEIGHT;
+	document.getElementById("minesweeper").width = cols * CELL_WIDTH;
+	return makeBoard(rows, cols);
+};
+
+var hasMines = function(board) {
+	for (var row = 0; row < board.length; row++) {
+		for (var col = 0; col < board.length; col++) {
+			if (board[row][col] & MINE) {
+				return true;
+			}
+		}
+	}
+	return false;
+};
+
 var leftClick = function(board, e) {
 	var cell = cellForClick(e, e.currentTarget);
-	if (board.length == 0) {
-		board = makeBoard(10,10,10, cell);
+	if (!hasMines(board)) {
+		var mines = document.getElementById("mines").value;
+		board = placeMines(board, mines, cell);
 	}
 	board[cell.row][cell.col] = board[cell.row][cell.col] | REVEALED;
 	if (adjacentMines(board, cell.row, cell.col) == 0 && !(board[cell.row][cell.col] & MINE)) {
@@ -112,11 +138,13 @@ var leftClick = function(board, e) {
 	updateBoard(board);
 	if (won) {
 		alert("You win!");
-		board = []
+		board = newGame();
+		updateBoard(board);
 	}
 	else if (lost) {
 		alert("You lose!");
-		board = []
+		board = newGame();
+		updateBoard(board);
 	}
 	return board;
 };
@@ -180,5 +208,7 @@ var onLoad = function() {
 	var board = [];
 	var canvas = document.getElementById("minesweeper");
 	myRightClick = function(e) { return rightClick(board, e); }
+	startNewGame = function() { board = newGame(); updateBoard(board); }
 	canvas.addEventListener("click", function(e) { board = leftClick(board, e); }, false);
+	startNewGame();
 };
