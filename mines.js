@@ -172,6 +172,10 @@ var updateBoard = function(board) {
 };
 
 var drawBoard = function(ctx, board) {
+	ctx.textAlign = "center";
+	ctx.fillStyle = "grey";
+	ctx.strokeStyle = "black";
+	ctx.fillRect(0,0,board[0].length * CELL_WIDTH, board.length * CELL_HEIGHT);
 	for (var row = 0; row < board.length; row++) {
 		for (var col = 0; col < board[row].length; col++) {
 			ctx.fillStyle = "grey";
@@ -189,19 +193,17 @@ var drawBoard = function(ctx, board) {
 			}
 			ctx.fillRect(col*CELL_WIDTH, row*CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
 			ctx.rect(col*CELL_WIDTH, row*CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
-			ctx.strokeStyle = "black";
-			ctx.stroke();
 			if (cell & REVEALED && !(cell & MINE)) {
-				var mines = adjacentMines(board, row, col);
-				if (mines > 0) {
-					ctx.textAlign = "center";
+				var numMines = adjacentMines(board, row, col);
+				if (numMines > 0) {
 					var x = col * CELL_WIDTH + Math.floor(CELL_WIDTH / 2);
 					var y = row * CELL_HEIGHT + Math.floor(CELL_HEIGHT / 2);
-					ctx.strokeText(mines.toString(), x, y);
+					ctx.strokeText(numMines.toString(), x, y);
 				}
 			}
 		}
 	}
+	ctx.stroke();
 };
 
 var onLoad = function() {
