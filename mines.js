@@ -65,6 +65,27 @@ var revealAdjacentZeroes = function(board, row, col) {
 	});
 };
 
+var revealAllMines = function(board) {
+	for (var row = 0; row < board.length; row++) {
+		for (var col = 0; col < board.length; col++) {
+			if (board[row][col] & MINE) {
+				board[row][col] = board[row][col] | REVEALED;
+			}
+		}
+	}
+}
+
+var hasWon = function(board) {
+	for (var row = 0; row < board.length; row++) {
+		for (var col = 0; col < board.length; col++) {
+			if (!(board[row][col] & MINE) && !(board[row][col] & REVEALED)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 var localCoords = function(e, element) {
 	return { x: e.pageX - element.offsetLeft, y: e.pageY - element.offsetTop };
 };
@@ -83,9 +104,19 @@ var leftClick = function(board, e) {
 	if (adjacentMines(board, cell.row, cell.col) == 0 && !(board[cell.row][cell.col] & MINE)) {
 		revealAdjacentZeroes(board, cell.row, cell.col);
 	}
+	var lost = board[cell.row][cell.col] & MINE && !(board[cell.row][cell.col] & FLAG);
+	var won = hasWon(board);
+	if (won || lost) {
+		revealAllMines(board);
+	}
 	updateBoard(board);
-	if (board[cell.row][cell.col] & MINE && !(board[cell.row][cell.col] & FLAG)) {
+	if (won) {
+		alert("You win!");
+		board = []
+	}
+	else if (lost) {
 		alert("You lose!");
+		board = []
 	}
 	return board;
 };
