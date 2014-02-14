@@ -60,6 +60,25 @@ var adjacentWithFlag = function(board, row, col, value) {
 	return count;
 };
 
+var mutateCells = function(board, fn) {
+	for (var row = 0; row < board.length; row++) {
+		for (var col = 0; col < board.length; col++) {
+			board[row][col] = fn(board[row][col]);
+		}
+	}
+};
+
+var every = function(board, fn) {
+	for (var row = 0; row < board.length; row++) {
+		for (var col = 0; col < board.length; col++) {
+			if (!fn(board[row][col])) {
+				return false;
+			}
+		}
+	}
+	return true;
+};
+
 var adjacentFlags = function(board, row, col) { return adjacentWithFlag(board, row, col, FLAG); }
 var adjacentMines = function(board, row, col) { return adjacentWithFlag(board, row, col, MINE); }
 
@@ -75,35 +94,20 @@ var revealAdjacentZeroes = function(board, row, col) {
 };
 
 var revealAllMines = function(board) {
-	for (var row = 0; row < board.length; row++) {
-		for (var col = 0; col < board.length; col++) {
-			if (board[row][col] & MINE) {
-				board[row][col] = board[row][col] | REVEALED;
-			}
+	mutateCells(board, function(val) {
+		if (val & MINE) {
+			return val | REVEALED;
 		}
-	}
+		return val;
+	});
 };
 
 var hasWon = function(board) {
-	for (var row = 0; row < board.length; row++) {
-		for (var col = 0; col < board.length; col++) {
-			if (!(board[row][col] & MINE) && !(board[row][col] & REVEALED)) {
-				return false;
-			}
-		}
-	}
-	return true;
+	return every(board, function(val) { return (val & MINE) || (val & REVEALED); });
 };
 
 var hasLost = function(board) {
-	for (var row = 0; row < board.length; row++) {
-		for (var col = 0; col < board.length; col++) {
-			if ((board[row][col] & MINE) && (board[row][col] & REVEALED) && !(board[row][col] & FLAG)) {
-				return true;
-			}
-		}
-	}
-	return false;
+	return !every(board, function(val) { return !((val & MINE) && (val & REVEALED) && !(val & FLAG)); });
 };
 
 var localCoords = function(e, element) {
@@ -124,14 +128,7 @@ var newGame = function() {
 };
 
 var hasMines = function(board) {
-	for (var row = 0; row < board.length; row++) {
-		for (var col = 0; col < board.length; col++) {
-			if (board[row][col] & MINE) {
-				return true;
-			}
-		}
-	}
-	return false;
+	return !every(board, function(val) { return !(val & MINE); });
 };
 
 var revealCell = function(board, row, col) {
